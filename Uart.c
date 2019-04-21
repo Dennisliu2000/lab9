@@ -27,14 +27,42 @@ uint32_t DataLost;
 // Make sure to turn ON UART1 Receiver Interrupt (Interrupt 6 in NVIC)
 // Write UART1_Handler
 void Uart_Init(void){
-   // --UUU-- complete with your code
+	int i=0;
+  SYSCTL_RCGCUART_R |= 0x04;
+	i++;
+	i++;
+	SYSCTL_RCGCGPIO_R |= 0x04; //init portC
+	i++;
+	i++;
+	
+	UART1_CTL_R &= ~0x01; //disable it first
+	
+	UART1_IBRD_R=50;
+	UART1_FBRD_R=0; //we set the above to to ensure 80MHz ops
+	
+	UART1_LCRH_R = 0x70; //8 bits, no parity, one stop
+	UART1_CTL_R = 0x01; //enable
+	UART1_IM_R |=0x10; //Arming RXRIS
+	UART1_IFLS_R = UART1_IFLS_R & (!0x28);
+	UART1_IFLS_R |= 0x10; //set bits 543 interrupt when half full
+	
+	GPIO_PORTC_AFSEL_R |= 0x30;
+	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFF00FFFF)+0x00220000;
+	GPIO_PORTC_AMSEL_R &= !0x30; //disable analog
+	GPIO_PORTC_DEN_R |= 0x30; //enable the pin
+	NVIC_PRI1_R = (NVIC_PRI1_R & 0xFF0FFFFF) | 0x00600000; //set priority
+	NVIC_EN0_R = 0x40; //enable interrupts
+	
 }
 
 // input ASCII character from UART
 // spin if RxFifo is empty
 // Receiver is interrupt driven
 char Uart_InChar(void){
-  return 0; // --UUU-- remove this, replace with real code
+	uint8_t rdata;
+	while((UART1_FR_R&0x10)!=0);
+	rdata = UART1_DR_R &0xFF;
+  return rdata;
 }
 
 //------------UART1_InMessage------------
@@ -53,7 +81,8 @@ void UART1_InMessage(char *bufPt){
 // Output: none
 // Transmitter is busywait
 void Uart_OutChar(char data){
-  // --UUU-- complete with your code
+  while((UART1_FR_R&0x20)!=0);
+	UART1_DR_R = data;
 }
 
 // hardware RX FIFO goes from 7 to 8 or more items

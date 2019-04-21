@@ -8,15 +8,16 @@
 #include <stdint.h>
 // --UUU-- Declare state variables for Fifo
 //        buffer, put and get indexes
-
-
+int count;
+int getIndex;
+int putIndex;
+char fifo[6]={0};
 // *********** Fifo_Init**********
 // Initializes a software FIFO of a
 // fixed size and sets up indexes for
 // put and get operations
 void Fifo_Init(){
-// --UUU-- Complete this
-
+	count = getIndex = putIndex = 0;
 }
 
 // *********** Fifo_Put**********
@@ -25,9 +26,13 @@ void Fifo_Init(){
 // Output: 1 for success and 0 for failure
 //         failure is when the buffer is full
 uint32_t Fifo_Put(char data){
-// --UUU-- Complete this routine
-
-  return(42); //Replace this
+	if(count == 6){	//6 bits should be sent and kept in the FIFO structure "0.0000"
+		return 0; 
+	}
+	fifo[putIndex] = data;
+	putIndex = (putIndex+1)%5;
+	count++; 				//DISABLE AND RE-ENABLE INTERRUPTS BEFORE AND AFTER THIS
+  return(1);
 }
 
 // *********** FiFo_Get**********
@@ -36,9 +41,12 @@ uint32_t Fifo_Put(char data){
 // Output: 1 for success and 0 for failure
 //         failure is when the buffer is empty
 uint32_t Fifo_Get(char *datapt){ 
-//--UUU-- Complete this routine
-
-  return(42); // Replace this
+	if(count == 0)
+		return 0;
+	*datapt = fifo[getIndex];
+	getIndex = (getIndex+1)%5;
+	count--;			//DISABLE AND RE-ENEABLE INTERRUPTS BEFORE AND AFTER THIS
+  return(1);
 }
 
 
