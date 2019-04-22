@@ -40,16 +40,33 @@ void EnableInterrupts(void);  // Enable interrupts
 #define PF3       (*((volatile uint32_t *)0x40025020))
 uint32_t Data;      // 12-bit ADC
 uint32_t Position;  // 32-bit fixed-point 0.001 cm
-
+char outval;
 
 // Initialize Port F so PF1, PF2 and PF3 are heartbeats
 void PortF_Init(void){
-// Intialize PortF for hearbeat
+	volatile uint32_t delay;
+	SYSCTL_RCGCGPIO_R |= 0x20;
+	delay = 100;
+	delay++;
+	GPIO_PORTF_DIR_R |= 0x0E;
+
+	//GPIO_PORTF_PUR_R |= 0x10;
+	//GPIO_PORTF_DIR_R &= ~0x10;
+	GPIO_PORTF_DEN_R |= 0x10; 
+	GPIO_PORTF_DEN_R |= 0x0E;
 }
 
 
+void SysTick_Init(void){
+	// write this
+	NVIC_ST_CTRL_R = 0;
+	NVIC_ST_RELOAD_R = 0x145855;
+	NVIC_ST_CURRENT_R = 0;
+	
+	NVIC_ST_CTRL_R = 0x7;
+}
 
-
+/*
 uint32_t Status[20];             // entries 0,7,12,19 should be false, others true
 char GetData[10];  // entries 1 2 3 4 5 6 7 8 should be 1 2 3 4 5 6 7 8
 int main1(void){ // Make this main to test FiFo
@@ -77,7 +94,7 @@ int main1(void){ // Make this main to test FiFo
     Status[19] = Fifo_Get(&GetData[9]);  // should fail,    empty
   }
 }
-
+*/
 // Get fit from excel and code the convert routine with the constants
 // from the curve-fit
 uint32_t Convert(uint32_t input){
@@ -88,27 +105,68 @@ uint32_t Convert(uint32_t input){
 // final main program for bidirectional communication
 // Sender sends using SysTick Interrupt
 // Receiver receives using RX
+
 int main(void){ 
-  
   PLL_Init(Bus80MHz);     // Bus clock is 80 MHz 
+	PortF_Init();
   ST7735_InitR(INITR_REDTAB);
+
+	
+	SysTick_Init();
+
+	
   ADC_Init();    // initialize to sample ADC
-  PortF_Init();
+	//GPIO_PORTF_DATA_R ^=0x02;
+	Delay1ms(1);
   Uart_Init();       // initialize UART
-  ST7735_SetCursor(0,0);
+	ST7735_OutString("test");
   LCD_OutFix(0);
   ST7735_OutString(" cm");
-//Enable SysTick Interrupt by calling SysTick_Init()
+	
   EnableInterrupts();
+	
   while(1){
-    //--UUU--Complete this  - see lab manual
-  }
+		ST7735_SetCursor(0,0);
+		//GPIO_PORTF_DATA_R ^=0x02;
+		Fifo_Get(&outval);
+		ST7735_OutChar(outval);
+		
+		Fifo_Get(&outval);
+		ST7735_OutChar('b');
+		
+		Fifo_Get(&outval);
+		ST7735_OutChar('c');
+		
+		Fifo_Get(&outval);
+		ST7735_OutChar('d'); 
+	
+  } 
 }
 
-/* SysTick ISR
-*/
+
+
 void SysTick_Handler(void){ // every 20 ms
- //Sample ADC, convert to distance, create 8-byte message, send message out UART1
+	char temp;
 
+
+	Data = ADC_In();
+	Position = Convert(Data);
+	
+	temp = Data/1000;
+	Uart_OutChar(temp); //temp contains thousands place. output
+	
+	Data = Data-temp*1000; //data now omits thousands place
+	temp = Data/100; //temp now has hundreds place
+	Uart_OutChar(temp);
+	
+	Data = Data-temp*100; //data now omits hundreds place
+	temp = Data/10; //temp now has 10s place
+	Uart_OutChar(temp);
+	
+	Data = Data-temp*10; //data now has ones place only
+	Uart_OutChar(temp);
+
+	
 }
+
 

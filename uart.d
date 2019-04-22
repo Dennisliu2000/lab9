@@ -3,3 +3,4 @@
 .\uart.o: Fifo.h
 .\uart.o: Uart.h
 .\uart.o: ../inc/tm4c123gh6pm.h
+.\uart.o: ST7735.h

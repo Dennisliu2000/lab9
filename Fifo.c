@@ -6,6 +6,8 @@
 // Last modification date: change this to the last modification date or look very silly
 
 #include <stdint.h>
+#include "../inc/tm4c123gh6pm.h"
+
 // --UUU-- Declare state variables for Fifo
 //        buffer, put and get indexes
 int count;
@@ -43,10 +45,13 @@ uint32_t Fifo_Put(char data){
 uint32_t Fifo_Get(char *datapt){ 
 	if(count == 0)
 		return 0;
+	NVIC_EN0_R &= ~0x40;
 	*datapt = fifo[getIndex];
 	getIndex = (getIndex+1)%5;
+	
 	count--;			//DISABLE AND RE-ENEABLE INTERRUPTS BEFORE AND AFTER THIS
-  return(1);
+  NVIC_EN0_R = 0x40;
+	return(1);
 }
 
 
