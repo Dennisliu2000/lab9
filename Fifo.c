@@ -7,6 +7,10 @@
 
 #include <stdint.h>
 #include "../inc/tm4c123gh6pm.h"
+#include "PLL.h"
+
+void DisableInterrupts(void); // Disable interrupts
+void EnableInterrupts(void);  // Enable interrupts
 
 // --UUU-- Declare state variables for Fifo
 //        buffer, put and get indexes
@@ -28,12 +32,18 @@ void Fifo_Init(){
 // Output: 1 for success and 0 for failure
 //         failure is when the buffer is full
 uint32_t Fifo_Put(char data){
+	DisableInterrupts();
 	if(count == 6){	//6 bits should be sent and kept in the FIFO structure "0.0000"
+		EnableInterrupts();
 		return 0; 
 	}
-	fifo[putIndex] = data;
-	putIndex = (putIndex+1)%5;
-	count++; 				//DISABLE AND RE-ENABLE INTERRUPTS BEFORE AND AFTER THIS
+	if(data!=0x02 && data !=0x03){
+		fifo[putIndex] = data;
+		putIndex = (putIndex+1)%6;
+		count++; 
+	}
+	EnableInterrupts();
+					//DISABLE AND RE-ENABLE INTERRUPTS BEFORE AND AFTER THIS
   return(1);
 }
 
@@ -43,14 +53,19 @@ uint32_t Fifo_Put(char data){
 // Output: 1 for success and 0 for failure
 //         failure is when the buffer is empty
 uint32_t Fifo_Get(char *datapt){ 
-	if(count == 0)
-		return 0;
-	NVIC_EN0_R &= ~0x40;
-	*datapt = fifo[getIndex];
-	getIndex = (getIndex+1)%5;
+	DisableInterrupts();
 	
-	count--;			//DISABLE AND RE-ENEABLE INTERRUPTS BEFORE AND AFTER THIS
-  NVIC_EN0_R = 0x40;
+	if(count == 0){
+		EnableInterrupts();
+		return 0;
+	}
+	*datapt = fifo[getIndex];
+	if(*datapt!=0){
+	getIndex = (getIndex+1)%6;
+	}
+	count--;
+	//DISABLE AND RE-ENEABLE INTERRUPTS BEFORE AND AFTER THIS
+	EnableInterrupts();
 	return(1);
 }
 

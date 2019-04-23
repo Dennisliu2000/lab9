@@ -98,7 +98,8 @@ int main1(void){ // Make this main to test FiFo
 // Get fit from excel and code the convert routine with the constants
 // from the curve-fit
 uint32_t Convert(uint32_t input){
-  return 0; //replace with your calibration code from Lab 8
+	
+  return (input*0.4463)+88.961; //replace with your calibration code from Lab 8
 }
 
 
@@ -107,6 +108,7 @@ uint32_t Convert(uint32_t input){
 // Receiver receives using RX
 
 int main(void){ 
+	DisableInterrupts();
   PLL_Init(Bus80MHz);     // Bus clock is 80 MHz 
 	PortF_Init();
   ST7735_InitR(INITR_REDTAB);
@@ -119,27 +121,23 @@ int main(void){
 	//GPIO_PORTF_DATA_R ^=0x02;
 	Delay1ms(1);
   Uart_Init();       // initialize UART
-	ST7735_OutString("test");
-  LCD_OutFix(0);
-  ST7735_OutString(" cm");
+	//ST7735_OutString("test");
+  //LCD_OutFix(0);
+  //ST7735_OutString(" cm");
 	
   EnableInterrupts();
-	
+	ST7735_SetCursor(0,0);
   while(1){
-		ST7735_SetCursor(0,0);
-		//GPIO_PORTF_DATA_R ^=0x02;
+		
 		Fifo_Get(&outval);
+		if(outval!=0){
 		ST7735_OutChar(outval);
-		
-		Fifo_Get(&outval);
-		ST7735_OutChar('b');
-		
-		Fifo_Get(&outval);
-		ST7735_OutChar('c');
-		
-		Fifo_Get(&outval);
-		ST7735_OutChar('d'); 
-	
+		}
+		//ST7735_OutString(" cm");
+		if(outval ==0x0D){
+			ST7735_SetCursor(0,0);
+		}
+			
   } 
 }
 
@@ -147,24 +145,28 @@ int main(void){
 
 void SysTick_Handler(void){ // every 20 ms
 	char temp;
-
+	char output[8] = {0x02,0,0x2E,0,0,0,0x0D,0x03};
 
 	Data = ADC_In();
 	Position = Convert(Data);
 	
-	temp = Data/1000;
-	Uart_OutChar(temp); //temp contains thousands place. output
+	temp = Position/1000;
+	output[1] = temp+0x30;
+ //temp contains thousands place. output
 	
-	Data = Data-temp*1000; //data now omits thousands place
-	temp = Data/100; //temp now has hundreds place
-	Uart_OutChar(temp);
+	Position = Position-temp*1000; //data now omits thousands place
+	temp = Position/100; //temp now has hundreds place
+	output[3] = temp+0x30;
 	
-	Data = Data-temp*100; //data now omits hundreds place
-	temp = Data/10; //temp now has 10s place
-	Uart_OutChar(temp);
+	Position = Position-temp*100; //data now omits hundreds place
+	temp = Position/10; //temp now has 10s place
+	output[4] = temp+0x30;
 	
-	Data = Data-temp*10; //data now has ones place only
-	Uart_OutChar(temp);
+	Position = Position-temp*10; //data now has ones place only
+	output[5] = Position+0x30;
+	for(int i=0;i<8;i++){
+		Uart_OutChar(output[i]);
+	}
 
 	
 }

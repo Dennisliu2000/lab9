@@ -35,10 +35,10 @@ void Uart_Init(void){
 	Delay1ms(5);
 	
 	UART1_CTL_R &= ~0x01; //disable it first
-			GPIO_PORTF_DATA_R ^=0x02;
+		
 
-	UART1_IBRD_R=50;
-	UART1_FBRD_R=0; //we set the above to to ensure 80MHz ops
+	UART1_IBRD_R=43;
+	UART1_FBRD_R=26; //we set the above to to ensure 80MHz ops
 	
 	UART1_LCRH_R = 0x70; //8 bits, no parity, one stop
 	UART1_IM_R |=0x10; //Arming RXRIS
@@ -48,7 +48,7 @@ void Uart_Init(void){
 	GPIO_PORTC_AFSEL_R |= 0x30;
 	GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R & 0xFF00FFFF)+0x00220000;
 	GPIO_PORTC_AMSEL_R &= !0x30; //disable analog
-	UART1_CTL_R = 0x01; //enable
+	UART1_CTL_R = 0x301; //enable
 	GPIO_PORTC_DEN_R |= 0x30; //enable the pin
 	
 	NVIC_PRI1_R = (NVIC_PRI1_R & 0xFF0FFFFF) | 0x00600000; //set priority
