@@ -17,12 +17,14 @@ void EnableInterrupts(void);  // Enable interrupts
 int count;
 int getIndex;
 int putIndex;
-char fifo[6]={0};
+char fifo[16]={0};
+
 // *********** Fifo_Init**********
 // Initializes a software FIFO of a
 // fixed size and sets up indexes for
 // put and get operations
 void Fifo_Init(){
+	
 	count = getIndex = putIndex = 0;
 }
 
@@ -32,18 +34,15 @@ void Fifo_Init(){
 // Output: 1 for success and 0 for failure
 //         failure is when the buffer is full
 uint32_t Fifo_Put(char data){
-	DisableInterrupts();
-	if(count == 6){	//6 bits should be sent and kept in the FIFO structure "0.0000"
-		EnableInterrupts();
+	//DisableInterrupts();
+	if(count>15){	
+		//EnableInterrupts();
 		return 0; 
 	}
-	if(data!=0x02 && data !=0x03){
 		fifo[putIndex] = data;
-		putIndex = (putIndex+1)%6;
-		count++; 
-	}
-	EnableInterrupts();
-					//DISABLE AND RE-ENABLE INTERRUPTS BEFORE AND AFTER THIS
+		putIndex = (putIndex+1)%16;
+		count++;
+
   return(1);
 }
 
@@ -53,19 +52,16 @@ uint32_t Fifo_Put(char data){
 // Output: 1 for success and 0 for failure
 //         failure is when the buffer is empty
 uint32_t Fifo_Get(char *datapt){ 
-	DisableInterrupts();
+	//DisableInterrupts();
 	
-	if(count == 0){
-		EnableInterrupts();
+	if(getIndex==putIndex){
+		//EnableInterrupts();
 		return 0;
 	}
 	*datapt = fifo[getIndex];
-	if(*datapt!=0){
-	getIndex = (getIndex+1)%6;
-	}
-	count--;
+	getIndex = (getIndex+1)%16;
 	//DISABLE AND RE-ENEABLE INTERRUPTS BEFORE AND AFTER THIS
-	EnableInterrupts();
+	//EnableInterrupts();
 	return(1);
 }
 

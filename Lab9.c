@@ -128,16 +128,34 @@ int main(void){
   EnableInterrupts();
 	ST7735_SetCursor(0,0);
   while(1){
-		
+		//ST7735_SetCursor(0,0);
 		Fifo_Get(&outval);
-		if(outval!=0){
-		ST7735_OutChar(outval);
-		}
-		//ST7735_OutString(" cm");
-		if(outval ==0x0D){
-			ST7735_SetCursor(0,0);
-		}
+		if(outval == 0x02){
+		
+			Fifo_Get(&outval);
+			ST7735_OutChar(outval);				
+		
+			Fifo_Get(&outval);
+			ST7735_OutChar(outval);
+
+			Fifo_Get(&outval);
+			ST7735_OutChar(outval);		
+		
+			Fifo_Get(&outval);
+			ST7735_OutChar(outval);
+
+			Fifo_Get(&outval);
+			ST7735_OutChar(outval);		
+			ST7735_OutString("cm");
 			
+			Fifo_Get(&outval);
+			ST7735_OutChar(outval);
+			
+			ST7735_SetCursor(0,0);
+			Fifo_Init();
+		}
+
+				
   } 
 }
 
